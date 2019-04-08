@@ -11,6 +11,19 @@ namespace SentryBot
     {
         static void Main(string[] args)
         {
+            // Zach Van Nes
+            // Finch Sentry Bot
+            // April 8th 2019
+
+
+            Pause();
+        }
+
+        static void Pause()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Press Any Key To Continue");
+            Console.ReadKey();
         }
     }
 }
