@@ -33,7 +33,6 @@ namespace SentryBot
                 Console.WriteLine();
                 Console.WriteLine("1: Set Up SentryBot");
                 Console.WriteLine("2: Activate SentryBot");
-                Console.WriteLine("3:");
                 Console.WriteLine("E: Exit");
                 menuChoice = Console.ReadLine();
 
@@ -42,19 +41,18 @@ namespace SentryBot
                     case "1":
                         lowerTempThreshold = SetupTemp(myFinch);
                         upperLightThreshold = SetupLight(myFinch);
+                        Console.Clear();
                         break;
                     case "2":
-                        ActivateSentryBot(lowerTempThreshold, myFinch);
-                        break;
-                    case "3":
-                        break;
+                        ActivateSentryBot(lowerTempThreshold, upperLightThreshold, myFinch);
+                        break;                    
                     case "E":
                     case "e":
                         keepGoing = false;
+                        Console.WriteLine("Thank You For Using The Application");
                         Pause();
                         myFinch.disConnect();
                         break;
-
                     default:
                         Console.WriteLine("Please Enter A Valid Menu Choice");
                         Pause();
@@ -76,14 +74,14 @@ namespace SentryBot
             Console.WriteLine("Set Up The SentryBot");
             Console.WriteLine();
             Console.WriteLine("Enter Temperature Change");
-            double.TryParse(Console.ReadLine(), out temperatureDifference);
-
+            while (! double.TryParse(Console.ReadLine(), out temperatureDifference))
+            {
+                Console.WriteLine("Please Enter A Valid Response");
+                Console.Clear();
+            }
             ambientTemp = myFinch.getTemperature();
 
             lowerTempThreshold = ambientTemp - temperatureDifference;
-
-            Pause();
-            Console.Clear();
 
             return lowerTempThreshold;
         }
@@ -93,24 +91,35 @@ namespace SentryBot
             double lightDifference;
             double upperLightThreshold;
             double ambientLight;
-            int[] ambientLightArray = new int[1];
 
-            myFinch.connect();
-
-            Console.WriteLine("Set Up The SentryBot");
             Console.WriteLine();
-            Console.WriteLine("Enter Temperature Change");
-            double.TryParse(Console.ReadLine(), out lightDifference);
-
-            ambientLightArray = myFinch.getLightSensors();
-            ambientLight = ambientLightArray.Average();
+            Console.WriteLine("Enter Light Change");
+            
+            while (!double.TryParse(Console.ReadLine(), out lightDifference))
+            {
+                Console.WriteLine("Please Enter A Valid Response");
+                Console.Clear();
+            }
+            ambientLight = CalculateAmbientLight(myFinch);
 
             upperLightThreshold = ambientLight + lightDifference;
 
             Pause();
-            Console.Clear();
+
 
             return upperLightThreshold;
+
+        }
+
+        static double CalculateAmbientLight(Finch myFinch)
+        {
+            double ambientLight;
+            int[] ambientLightArray = new int[1];
+
+            ambientLightArray = myFinch.getLightSensors();
+            ambientLight = ambientLightArray.Average();
+
+            return ambientLight;
         }
 
         static bool TempBelowThreshold(double lowerTempThreshold, Finch myFinch)
@@ -127,9 +136,9 @@ namespace SentryBot
 
         static bool LightAboveThreshold(double upperLightThreshold, Finch myFinch)
         {
-            // have the if/else check for light level average
+            double ambientLight = CalculateAmbientLight(myFinch);
 
-            if (myFinch.getTemperature() >= upperLightThreshold)
+            if (ambientLight >= upperLightThreshold)
             {
                 return true;
             }
@@ -139,17 +148,52 @@ namespace SentryBot
             }
         }
 
-        static void ActivateSentryBot(double lowerTempThreshold, Finch myFinch)
+        static void ActivateSentryBot(double lowerTempThreshold, double upperLightThreshold, Finch myFinch)
         {
+            bool currentTemp= false;
+            bool currentLight = false;
+
             Console.Clear();
-            Console.WriteLine("Monitoring Temperature");
-            while (!TempBelowThreshold(lowerTempThreshold, myFinch))
+            Console.WriteLine("Monitoring Temperature And Light");
+            while (!TempBelowThreshold(lowerTempThreshold, myFinch) && !LightAboveThreshold(upperLightThreshold, myFinch))
             {
-                FlashNormalTempLigh(myFinch);
+                FlashNormalLigh(myFinch);
+
+                currentTemp = TempBelowThreshold(lowerTempThreshold, myFinch);
+                currentLight = LightAboveThreshold(upperLightThreshold, myFinch);
             }
+
+            myFinch.noteOn(750);
+            myFinch.setLED(0, 0, 255);
+            Console.WriteLine("Press Any Key To Turn Off Alarm");
+            Console.ReadKey();
+            Console.WriteLine();
+            myFinch.noteOff();
+            myFinch.setLED(0, 0, 0);
+
+            if (currentTemp == true)
+            {
+                Console.WriteLine("Tempurture Dropped Below Threshold");
+                Pause();
+                Console.Clear();
+            }
+            else if (currentLight == true)
+            {
+                Console.WriteLine("Light Went Above Threshold");
+                Pause();
+                Console.Clear();
+            }
+            else
+            {
+                Console.WriteLine("An Error Occured");
+                Pause();
+                Console.Clear();
+            }
+
+
         }
 
-        static void FlashNormalTempLigh(Finch myFinch)
+        static void FlashNormalLigh(Finch myFinch)
         {
             myFinch.setLED(0, 255, 0);
             myFinch.wait(500);
