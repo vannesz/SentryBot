@@ -15,6 +15,7 @@ namespace SentryBot
             // Finch Sentry Bot
             // April 8th 2019
 
+            // opening and closing screens built into menu
             Menu();
         }
 
@@ -26,6 +27,10 @@ namespace SentryBot
             string menuChoice;
             double lowerTempThreshold = 0;
             double upperLightThreshold = 0;
+
+            Console.WriteLine("Welcome To The SentryBot Program");
+            Pause();
+            Console.Clear();
 
             while (keepGoing == true)
             {
